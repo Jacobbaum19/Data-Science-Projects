@@ -1,0 +1,63 @@
+library(ggplot2)
+library(ggthemes)
+library(dplyr)
+library(corrgram)
+library(corrplot)
+library(caTools)
+
+#Reading in data and making a scatter plot of temperature over number of rentals
+bike <- read.csv("bikeshare.csv")
+
+pl1 <- ggplot(bike,aes(x=temp,y=count)) + 
+  geom_point(aes(color=temp),alpha=0.2) + theme_bw()
+print(pl1)
+
+bike$datetime <- as.POSIXct(bike$datetime)
+
+#Orange and blue graph with time being the x value
+pl2 <- ggplot(bike,aes(x=datetime,y=count)) + 
+  geom_point(aes(color=temp),alpha=0.5) + theme_bw() + scale_color_continuous(low='#55D8CE',high='#FF6E2E')
+print(pl2)
+
+#Correlation between temp and count
+
+cor <- cor(bike[,c("temp","count")])
+
+#Graph 3, finding the season in the data through a box plot
+
+pl3 <- ggplot(bike,aes(x=factor(season),y=count)) + 
+  geom_boxplot(aes(color=factor(season))) + theme_bw()
+print(pl3)
+
+#Making an hour column
+time.stamp <- bike$datetime[4]
+format(time.stamp, "%H")
+bike$hour <- sapply(bike$datetime,function(x){format(x,"%H")})
+bike$hour <- sapply(bike$hour,as.numeric)
+
+#Forth graph of rentals per hour during a working day (Mon-Fri)
+
+pl4 <- ggplot(filter(bike, workingday == 1), aes(hour, count)) + 
+  geom_point(position = position_jitter(w = 1, h = 0), aes(color = temp), alpha = 0.5) + 
+  scale_color_gradientn(colors = c("darkblue","blue", "lightblue", "green", "yellow", "orange", "red")) + 
+  theme_bw()
+print(pl4)
+
+#Fifth graph of rentals per hour on a non working day (Sat-Sun)
+pl5 <- ggplot(filter(bike, workingday == 0), aes(hour, count)) + 
+  geom_point(position = position_jitter(w = 1, h = 0), aes(color = temp), alpha = 0.5) + 
+  scale_color_gradientn(colors = c("darkblue","blue", "lightblue", "green", "yellow", "orange", "red")) + 
+  theme_bw()
+print(pl5)
+
+#lm model
+
+temp.model <- lm(count~temp,bike)
+
+#Predict
+temp.test <- data.frame(temp=c(25))
+predict(temp.model,temp.test)
+
+#new lm model
+new.model <- lm(count ~ . -casual -registered -atemp, bike)
+predict(new.model,temp.test)
