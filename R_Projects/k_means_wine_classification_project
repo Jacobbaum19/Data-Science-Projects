@@ -1,0 +1,63 @@
+library(dplyr)
+library(ggplot2)
+
+df1 <- read.csv("winequality-red.csv", sep = ";")
+df2 <- read.csv("winequality-white.csv", sep = ";")
+
+# Adding label to red or white
+df1$label <- sapply(df1$pH, function(x) {'red'})
+df2$label <- sapply(df2$pH, function(x) {'white'})
+
+wine <- rbind(df1, df2)
+
+## DATA VISUALIZATIONS ##
+
+# First Plot
+pl1 <- ggplot(wine, aes(x=residual.sugar)) + 
+  geom_histogram(aes(fill=factor(label, levels = c("white", "red"))), color='black', bins=50) +
+  scale_fill_manual(values = c('#faf7ea', '#ae4554'), labels = c("White", "Red")) +
+  theme_bw()
+print(pl1)
+
+# Second Plot
+pl2 <- ggplot(wine, aes(x=citric.acid)) + 
+  geom_histogram(aes(fill=factor(label, levels = c("white", "red"))), color='black', bins=50) +
+  scale_fill_manual(values = c('#faf7ea', '#ae4554'), labels = c("White", "Red")) +
+  theme_bw()
+print(pl2)
+
+#Plot 3
+pl3 <- ggplot(wine, aes(citric.acid, residual.sugar)) + 
+  geom_point(aes(color = label),alpha=0.2) + 
+  scale_color_manual(values = c('#ae4554',"white")) +
+  theme_dark()
+print(pl3)
+
+#Plot 4
+pl4 <- ggplot(wine, aes(volatile.acidity,residual.sugar)) + 
+  geom_point(aes(color = label),alpha=0.2) + 
+  scale_color_manual(values = c('#ae4554',"white")) +
+  theme_dark()
+print(pl4)
+
+## K-Means Clustering##
+
+#First, remove the 'label' column
+
+clus.data <- wine[,1:12]
+set.seed(101)
+
+clus.cluster <- kmeans(clus.data,2)
+print(clus.cluster)
+
+#Predict the label to actual label
+
+table <- table(clus.cluster$cluster,wine$label)
+print(table)
+library(cluster)
+clusplot(wine,clus.cluster$cluster,color=T,shade= T, labels= 0, lines = 0)
+
+# Precision of 98% for red wine and 73% for white. (because of more variation.)
+# Precision  = true positive/total (False positives and true positives.)
+# Making sure I viewed this table correctly.
+summary(df2)
